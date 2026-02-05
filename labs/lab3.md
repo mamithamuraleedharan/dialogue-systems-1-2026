@@ -39,8 +39,15 @@
    ```sh
    yarn
    ```
-
-5. Create a file called `azure.ts` in `src/` folder:
+   If you encounter build errors during `yarn install` (especially with packages like `p-defer-es5`), try a clean install:
+   ```sh
+   rm -rf node_modules .yarn .pnp.* yarn.lock
+   ```
+   then again:
+   ```sh
+   yarn
+   ```
+6. Create a file called `azure.ts` in `src/` folder:
    ```sh
    cd src/
    ```
@@ -65,16 +72,16 @@
    ```
    (Note: Using `echo` command with a single ">" will overwrite the file! As a rule of thumb, be very careful when using this command! For example, `echo "src/azure.ts" > .gitignore` will overwrite everything inside ".gitignore" file!)
 
-6. Test the project:
+7. Test the project:
    ```sh
    yarn dev
    ```
 
-7. Open the link that was shown, in your browser, e.g. http://localhost:5173/
+8. Open the link that was shown, in your browser, e.g. http://localhost:5173/
 
-8. Allow access to your microphone.
+9. Allow access to your microphone.
 
-9. When you unblock the pop-up window, and reload the page you will see the state inspector; this can be useful during development.
+10. When you unblock the pop-up window, and reload the page you will see the state inspector; this can be useful during development.
 
 ## Assignment
 
