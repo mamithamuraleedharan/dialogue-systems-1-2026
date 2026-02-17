@@ -35,6 +35,8 @@ const grammar: { [index: string]: GrammarEntry } = {
   
   appointment: { help: "create appointment" },
   meeting: { help: "create appointment" },
+  book: {help: "create appointment" },
+  schedule: {help: "create appointment" },
   
   vlad: { person: "Vladislav Maraev" },
   bora: { person: "Bora Kara" },
@@ -50,15 +52,15 @@ const grammar: { [index: string]: GrammarEntry } = {
   friday:   { day: "Friday" },
   saturday: { day: "Saturday" },
   
-  "10": { time: "10:00" },
-  "11": { time: "11:00" },
-  "12": { time: "12:00" },
-  "13": { time: "13:00" },
-  "14": { time: "14:00" },
-  "15": { time: "15:00" },
-  "16": { time: "16:00" },
-  "17": { time: "17:00" },
-  "18": { time: "18:00" },
+  "10": { time: "10:00 AM" },
+  "11": { time: "11:00 AM" },
+  "12": { time: "12:00 PM" },
+  "13": { time: "1:00 PM" },
+  "14": { time: "2:00 PM" },
+  "15": { time: "3:00 PM" },
+  "16": { time: "4:00 PM" },
+  "17": { time: "5:00 PM" },
+  "18": { time: "6:00 PM" },
   
   yes: {wholeDay : "Yes"},
   ya: {wholeDay : "Yes"},
@@ -97,13 +99,65 @@ function getwholeDay(utterance: string) {
 
 function isYes(utterance: string) {
   const yesWords = ["yes", "yeah", "yep", "sure", "of course","ya sure","okay sure"];
-  return yesWords.includes(utterance.toLowerCase());
+  for (const word of yesWords) {
+    if (utterance.toLowerCase().includes(word)) {
+      return true;
+    }
+  }
+  return false;
 }
+
 
 function isNo(utterance: string) {
   const noWords = ["no", "nope", "nah", "no way","no guess no","maybe not"];
-  return noWords.includes(utterance.toLowerCase());
+  for (const word of noWords) {
+    if (utterance.toLowerCase().includes(word)) {
+      return true;
+    }
+  }
+  return false;
 }
+
+function getPersonFromSentence(utterance:string){
+  const personNames = ["vlad", "bora", "tal", "tom", "ann", "john"];
+  for (const name of personNames) {
+    if (utterance.toLowerCase().includes(name)) {
+      return getPerson(name);
+    }   
+  }
+  return undefined;
+}
+
+function getHelpFromSentence(utterance:string){
+  const helpWords = ["appointment", "meeting","book","schedule"];
+  for (const word of helpWords) {
+    if (utterance.toLowerCase().includes(word)) {
+      return (word);
+    }   
+  }
+  return undefined;
+}
+function getDayFromSentence(utterance:string){
+  const weekDays = ["monday","tuesday","wednesday","thursday","friday","saturday"];
+  for (const days of weekDays) {
+    if (utterance.toLowerCase().includes(days)) {
+      return getDay(days);
+    }   
+  }
+  return undefined;
+}
+function getTimeFromSentence(utterance: string){
+  const times = ["10", "11", "12", "13", "14", "15", "16", "17", "18"];
+  for (const time of times) {
+    if (utterance.toLowerCase().includes(time)) {
+      return getTime(time);
+    }
+  }
+  return undefined;
+}
+
+
+
 const dmMachine = setup({
   types: {
     context: {} as DMContext,
@@ -142,6 +196,7 @@ const dmMachine = setup({
     WaitToStart: {
       on: { CLICK: "AskHelp" },
     },
+    
     //AskHelp
     
     AskHelp: {
@@ -187,11 +242,24 @@ const dmMachine = setup({
         type: "spst.speak",
         params: ({ context }) => ({
           utterance: `You just said you wanna help with ${context.lastResult![0].utterance}. And  ${
-            isInGrammar(context.lastResult![0].utterance) ? "is" : "is not"
+            !!getHelpFromSentence(context.lastResult![0].utterance) ? "is" : "is not"
           } possible.`,
         }),
       },
-      on: { SPEAK_COMPLETE: "AskPerson" },
+      on: { SPEAK_COMPLETE: [
+        {
+          target: "AskPerson",
+          guard: ({ context }) => {
+            const utterance = context.lastResult![0].utterance;
+            return !!getHelpFromSentence(utterance);
+          },
+        },
+        {
+          target: "AskHelp.Prompt",
+        },
+      ],
+      },
+    
     },
     
     //AskPerson
@@ -227,7 +295,7 @@ const dmMachine = setup({
                 const utterance = event.value[0].utterance;
                 return { 
                   lastResult: event.value,
-                  person: getPerson(utterance) 
+                  person: getPersonFromSentence(utterance) 
                 };
               }),
             },
@@ -244,11 +312,24 @@ const dmMachine = setup({
         type: "spst.speak",
         params: ({ context }) => ({
           utterance: `You just said: ${context.lastResult![0].utterance}. And it ${
-            isInGrammar(context.lastResult![0].utterance) ? "is" : "is not"
+            !!getPersonFromSentence(context.lastResult![0].utterance) ? "is" : "is not"
           } possible`,
         }),
       },
-      on: { SPEAK_COMPLETE: "AskDay" },
+      on: { 
+        SPEAK_COMPLETE:[
+        {
+          target: "AskDay",
+          guard: ({ context }) => {
+            const utterance = context.lastResult![0].utterance;
+            return !!getPersonFromSentence(utterance);
+          },
+        },
+        {
+          target: "AskPerson.Prompt",
+        },
+      ],
+      },
     },
     
     //AskDay
@@ -283,7 +364,7 @@ const dmMachine = setup({
                 const utterance = event.value[0].utterance;
                 return { 
                   lastResult: event.value,
-                  day: getDay(utterance) 
+                  day: getDayFromSentence(utterance)
                 };
               }),
             },
@@ -300,11 +381,24 @@ const dmMachine = setup({
         type: "spst.speak",
         params: ({ context }) => ({
           utterance: `You just said you wanna meet on ${context.lastResult![0].utterance}. And the day ${
-            isInGrammar(context.lastResult![0].utterance) ? "is" : "is not"
+            !!getDayFromSentence(context.lastResult![0].utterance) ? "is" : "is not"
           } available.`,
         }),
       },
-      on: { SPEAK_COMPLETE: "AskWholeDay" },
+      on: { 
+        SPEAK_COMPLETE:[
+        {
+          target: "AskWholeDay",
+          guard: ({ context }) => {
+            const utterance = context.lastResult![0].utterance;
+            return !!getDayFromSentence(utterance);
+          },
+        },
+        {
+          target: "AskDay.Prompt",
+        },
+      ],
+      },
     },
     
     //AskWholeDay
@@ -398,7 +492,7 @@ const dmMachine = setup({
                 const utterance = event.value[0].utterance;
                 return { 
                   lastResult: event.value,
-                  time: getTime(utterance)  
+                  time: getTimeFromSentence(utterance) 
                 };
               }),
             },
@@ -415,11 +509,24 @@ const dmMachine = setup({
         type: "spst.speak",
         params: ({ context }) => ({
           utterance: `You just said you wanna meet at ${context.lastResult![0].utterance}. And that time ${
-            isInGrammar(context.lastResult![0].utterance) ? "is" : "is not"
+          !!getTimeFromSentence(context.lastResult![0].utterance) ? "is" : "is not"
           } available.`,
         }),
       },
-      on: { SPEAK_COMPLETE: "Confirm" },
+      on: { 
+        SPEAK_COMPLETE:[
+        {
+          target: "Confirm",
+          guard: ({ context }) => {
+            const utterance = context.lastResult![0].utterance;
+            return !!getTimeFromSentence(utterance);
+          },
+        },
+        {
+          target: "AskTime.Prompt",
+        },
+      ],
+      },
     },
     
     
@@ -452,7 +559,7 @@ Confirm: {
       entry: { 
         type: "spst.speak", 
         params: ({ context }) => ({
-          utterance: context.wholeDay?.toLowerCase() === "yes"
+          utterance: isYes(context.wholeDay || "")
             ? `Do you want to create an appointment with ${context.person} on ${context.day} for the whole day?`
             : `Do you want to create an appointment with ${context.person} on ${context.day} at ${context.time}?`
         }),
