@@ -134,11 +134,11 @@ choose *appointment*. (When you re-train the model later on, select
          deploymentName: "" /** your Azure CLU deployment */,
          projectName: "" /** your Azure CLU project name */,
        };
-    ```
+     ```
 
-  ```typescript
-   - To your =settings= const add said object:
-     #+begin_src javascript
+  
+   - To your *settings* const add said object:
+     ```typescript
        const settings = {
          azureLanguageCredentials: azureLanguageCredentials /** global activation of NLU */,
          azureCredentials: azureCredentials,
@@ -147,7 +147,7 @@ choose *appointment*. (When you re-train the model later on, select
          locale: "en-US",
          ttsDefaultVoice: "en-US-DavisNeural",
        };
-  ```
+     ```
 
 4. Whenever you need to use Azure CLU, add the following parameter to
    *LISTEN* event.
